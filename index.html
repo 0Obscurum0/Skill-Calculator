@@ -1,87 +1,117 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>스킬 계산기</title>
   <style>
     body {
-      font-family: sans-serif;
-      background: #121212;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
       color: #ffffff;
       padding: 20px;
     }
-    input {
-      margin-bottom: 5px;
-      width: 100%;
-      padding: 6px;
-      font-size: 14px;
+    input[type="number"] {
+      width: 80px;
+      margin: 5px;
     }
     button {
-      margin-top: 10px;
-      padding: 10px;
-      width: 100%;
-      font-size: 16px;
+      margin: 10px 0;
+      padding: 5px 10px;
     }
-    .result {
-      margin-top: 20px;
-      font-weight: bold;
+    .section {
+      margin-bottom: 30px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 20px;
     }
   </style>
 </head>
 <body>
-  <h2>스킬 계산기</h2>
+  <h1>스킬 계산기</h1>
 
-  <div>
-    <label>기초공격력 <input type="number" id="baseAtk" /></label><br>
-    <label>깡공 <input type="number" id="flatAtk" /></label><br>
-    <label>공격력% <input type="number" id="atkPercent" /></label><br>
-    <label>기초스킬데미지% <input type="number" id="baseSkillDmg" /></label><br>
-    <label>추가스킬데미지% <input type="number" id="addSkillDmg" /></label><br>
-    <label>치확% <input type="number" id="critRate" /></label><br>
-    <label>치명타피해% <input type="number" id="critDmg" /></label><br>
-    <label>낙인(기본 1.2) <input type="number" id="stigma" value="1.2" /></label><br>
-    <label>저주% <input type="number" id="curse" /></label><br>
-    <label>감전% <input type="number" id="shock" /></label><br>
-    <label>추가피해% <input type="number" id="bonus" /></label><br>
-    <label>적중시 피해 <input type="number" id="onHit" /></label><br>
-    <label>기본 기술 피해량 증가% <input type="number" id="basicSkillBoost" /></label><br>
+  <!-- 입력창 -->
+  <div class="section">
+    <h2>입력값</h2>
+    <label>기초공격력: <input id="baseAtk" type="number"></label>
+    <label>깡공: <input id="flatAtk" type="number"></label>
+    <label>공격력%: <input id="atkPct" type="number"></label>
+    <label>기초스킬데미지%: <input id="baseSkillPct" type="number"></label>
+    <label>추가스킬데미지%: <input id="addSkillPct" type="number"></label>
+    <label>치확%: <input id="critChance" type="number"></label>
+    <label>치명타피해%: <input id="critDmg" type="number"></label>
+    <label>저주%: <input id="curse" type="number"></label>
+    <label>감전%: <input id="shock" type="number"></label>
+    <label>추가피해%: <input id="extraDmg" type="number"></label>
+    <label>적중시 피해: <input id="onHitDmg" type="number"></label>
+    <label>기본 기술 피해량 증가%: <input id="basicSkillBoost" type="number"></label>
+  </div>
 
+  <!-- 결과 -->
+  <div class="section">
+    <h2>결과</h2>
     <button onclick="calculate()">계산</button>
-
-    <div class="result" id="skillResult"></div>
-    <div class="result" id="basicResult"></div>
+    <p>🟠 <strong>스킬피해:</strong> <span id="skillResult">-</span></p>
+    <p>🟡 <strong>기본 기술 피해:</strong> <span id="basicResult">-</span></p>
+    <button onclick="saveResult()">현재 값 저장</button>
+    <p>🟢 <strong>저장된 값:</strong> <span id="savedValue">없음</span></p>
+    <p>🔵 <strong>현재 효율 (증가율):</strong> <span id="efficiency">-</span></p>
   </div>
 
   <script>
-    function toMultiplier(percent) {
-      return 1 + (percent || 0) / 100;
+    function getValue(id) {
+      const val = parseFloat(document.getElementById(id).value);
+      return isNaN(val) ? null : val;
     }
 
     function calculate() {
-      const baseAtk = parseFloat(document.getElementById("baseAtk").value) || 0;
-      const flatAtk = parseFloat(document.getElementById("flatAtk").value) || 0;
-      const atkPercent = toMultiplier(parseFloat(document.getElementById("atkPercent").value));
-      const baseSkillDmg = (parseFloat(document.getElementById("baseSkillDmg").value) || 0) / 100;
-      const addSkillDmg = (parseFloat(document.getElementById("addSkillDmg").value) || 0) / 100;
-      const critRate = toMultiplier(parseFloat(document.getElementById("critRate").value));
-      const critDmg = 2 + (parseFloat(document.getElementById("critDmg").value) || 0) / 100;
-      const stigma = parseFloat(document.getElementById("stigma").value) || 1.2;
-      const curse = toMultiplier(parseFloat(document.getElementById("curse").value));
-      const shock = toMultiplier(parseFloat(document.getElementById("shock").value));
-      const bonus = toMultiplier(parseFloat(document.getElementById("bonus").value));
-      const onHit = parseFloat(document.getElementById("onHit").value) || 0;
-      const basicSkillBoost = toMultiplier(parseFloat(document.getElementById("basicSkillBoost").value));
+      const baseAtk = getValue("baseAtk") ?? 0;
+      const flatAtk = getValue("flatAtk") ?? 0;
+      const atkPct = (getValue("atkPct") ?? 0) / 100;
+      const baseSkillPct = (getValue("baseSkillPct") ?? 0) / 100;
+      const addSkillPct = (getValue("addSkillPct") ?? 0) / 100;
+      const critChance = (getValue("critChance") ?? 0) / 100;
+      const critDmg = (getValue("critDmg") ?? 0) / 100;
+      const curse = (getValue("curse") ?? 0) / 100;
+      const shock = (getValue("shock") ?? 0) / 100;
+      const extraDmg = (getValue("extraDmg") ?? 0) / 100;
+      const onHitDmg = getValue("onHitDmg") ?? 0;
+      const basicSkillBoost = (getValue("basicSkillBoost") ?? 0) / 100;
 
-      const atk = (baseAtk + flatAtk) * atkPercent;
-      const skillDamagePart = atk * (baseSkillDmg + addSkillDmg) * critRate * critDmg;
+      const atkCalc = (baseAtk + flatAtk) * (1 + atkPct);
+      const skillDmg = atkCalc * (baseSkillPct + addSkillPct) * (1 + critChance) * (2 + critDmg);
+      const totalMultiplier = 1.2 * (1 + curse) * (1 + shock) * (1 + extraDmg);
+      const finalSkill = skillDmg * totalMultiplier + onHitDmg;
 
-      const totalSkillDmg = skillDamagePart * stigma * curse * shock * bonus + onHit;
-      const basicSkillDmg = skillDamagePart * basicSkillBoost * stigma * curse * shock * bonus + onHit;
+      const basicSkill = skillDmg * (1 + basicSkillBoost) * totalMultiplier + onHitDmg;
 
-      document.getElementById("skillResult").innerText = "스킬 피해: " + totalSkillDmg.toFixed(2);
-      document.getElementById("basicResult").innerText = "기본 기술 피해: " + basicSkillDmg.toFixed(2);
+      document.getElementById("skillResult").textContent = Math.round(finalSkill);
+      document.getElementById("basicResult").textContent = Math.round(basicSkill);
+
+      // 효율 계산
+      const saved = parseFloat(localStorage.getItem("savedValue"));
+      if (!isNaN(saved) && saved > 0) {
+        const efficiency = finalSkill / saved;
+        document.getElementById("efficiency").textContent = efficiency.toFixed(2) + "배";
+      } else {
+        document.getElementById("efficiency").textContent = "-";
+      }
     }
+
+    function saveResult() {
+      const val = document.getElementById("skillResult").textContent;
+      if (!isNaN(val)) {
+        localStorage.setItem("savedValue", val);
+        document.getElementById("savedValue").textContent = val;
+        calculate(); // 다시 계산해서 효율 반영
+      }
+    }
+
+    // 처음 로딩 시 저장값 불러오기
+    window.onload = () => {
+      const saved = localStorage.getItem("savedValue");
+      if (saved) {
+        document.getElementById("savedValue").textContent = saved;
+      }
+    };
   </script>
 </body>
 </html>
