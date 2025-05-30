@@ -30,7 +30,7 @@
       border: none;
       cursor: pointer;
     }
-    #skillResult, #efficiencyResult {
+    #skillResult, #efficiencyResult, #atkResult, #bleedResult, #stabResult {
       white-space: pre-line;
       margin-top: 20px;
       padding: 10px;
@@ -56,7 +56,6 @@
   <label>적중시 피해 (상수 또는 %): <input type="text" id="hitDmg"></label>
   <label><input type="checkbox" id="markCheck"> 낙인 있음 (1.2배)</label>
   <label><input type="checkbox" id="hiddenBlade"> 숨겨진 칼날 유물 장착</label>
-
   <button onclick="calculateSkill()">계산하기</button>
   <div id="skillResult"></div>
 
@@ -66,73 +65,99 @@
   <button onclick="calculateEfficiency()">효율 계산</button>
   <div id="efficiencyResult"></div>
 
+  <h2>공격력 계산기</h2>
+  <label>기초 공격력: <input type="number" id="atkBaseOnly"></label>
+  <label>깡 공격력: <input type="number" id="atkFlatOnly"></label>
+  <label>공격력 %: <input type="text" id="atkPercentOnly"></label>
+  <button onclick="calculateAtk()">표기 공격력 계산</button>
+  <div id="atkResult"></div>
+
+  <h2>출혈 계산기</h2>
+  <label>출혈 계수 (기본 0.15): <input type="text" id="bleedCoef" value="0.15"></label>
+  <label>출혈 피해 % 증가: <input type="text" id="bleedDmg"></label>
+  <label>출혈 내성 % 증가: <input type="text" id="bleedResist"></label>
+  <button onclick="calculateBleed()">출혈 피해 계산</button>
+  <div id="bleedResult"></div>
+
+  <h2>자상 계산기</h2>
+  <label>출혈 피해: <input type="text" id="bleedValue"></label>
+  <label>출혈 중첩 수: <input type="number" id="bleedStack"></label>
+  <label>자상 계수 (기본 3.5): <input type="text" id="stabCoef" value="3.5"></label>
+  <label>자상 피해 % 증가: <input type="text" id="stabDmg"></label>
+  <button onclick="calculateStab()">자상 피해 계산</button>
+  <div id="stabResult"></div>
+
   <script>
-    function parseValue(value) {
-      if (!value) return 0;
-      if (value.toString().includes('%')) {
-        return parseFloat(value) / 100;
-      }
-      return parseFloat(value);
-    }
-
-    function calculateSkill() {
-      const baseAtk = parseValue(document.getElementById('baseAtk').value);
-      const flatAtk = parseValue(document.getElementById('flatAtk').value);
-      const atkPercent = parseValue(document.getElementById('atkPercent').value);
-      const baseSkillDmg = parseValue(document.getElementById('baseSkillDmg').value);
-      const addSkillDmg = parseValue(document.getElementById('addSkillDmg').value);
-      let critRate = parseValue(document.getElementById('critRate').value);
-      let critDmg = parseValue(document.getElementById('critDmg').value);
-      const curse = parseValue(document.getElementById('curse').value);
-      const shock = parseValue(document.getElementById('shock').value);
-      const addDmg = parseValue(document.getElementById('addDmg').value);
-      const basicBoost = parseValue(document.getElementById('basicBoost').value);
-      const hitDmgRaw = document.getElementById('hitDmg').value;
-      const mark = document.getElementById('markCheck').checked;
-      const hiddenBlade = document.getElementById('hiddenBlade').checked;
-
-      const markValue = mark ? 1.2 : 1;
-
-      let displayedCritRate = critRate;
-      if (hiddenBlade) {
-        displayedCritRate *= 1.5;
-      }
-      const critRateCapped = Math.min(displayedCritRate, 1);
-      const overCritRate = Math.max(0, displayedCritRate - 1);
-
-      const bonusCritDmgFromOver = hiddenBlade ? overCritRate : 0;
-      const totalCritDmg = critDmg + bonusCritDmgFromOver;
-
-      const displayedAtk = (baseAtk + flatAtk) * (1 + atkPercent);
-      const totalSkillDmg = baseSkillDmg + addSkillDmg;
-
-      const critMultiplier = (1 + critRateCapped) * (2 + totalCritDmg);
-      let mainDamage = displayedAtk * totalSkillDmg * critMultiplier;
-      mainDamage *= markValue * (1 + curse) * (1 + shock) * (1 + addDmg);
-
-      const hitDmg = hitDmgRaw.includes('%') ? mainDamage * parseValue(hitDmgRaw) : parseFloat(hitDmgRaw) || 0;
-      const totalDmg = mainDamage + hitDmg;
-      const baseSkillDmgCalc = totalDmg * (1 + basicBoost);
-
-      let formulaText = `표기 공격력 = (${baseAtk} + ${flatAtk}) × (1 + ${atkPercent * 100}%) = ${displayedAtk.toFixed(2)}\n`;
-      formulaText += `치명타 확률 = ${critRate * 100}% ${hiddenBlade ? '× 1.5 = ' + (displayedCritRate * 100).toFixed(2) + '%' : ''}\n`;
-      formulaText += `실제 적용 치확 = ${(critRateCapped * 100).toFixed(2)}%, 초과 치확 = ${(overCritRate * 100).toFixed(2)}%\n`;
-      formulaText += `치명타 피해 = ${critDmg * 100}% ${bonusCritDmgFromOver > 0 ? `+ 초과치 ${bonusCritDmgFromOver * 100}%` : ''} = ${(totalCritDmg * 100).toFixed(2)}%\n`;
-      formulaText += `스킬 피해 = [${displayedAtk.toFixed(2)} × (${baseSkillDmg} + ${addSkillDmg}) × (1 + ${critRateCapped * 100}%) × (2 + ${(totalCritDmg * 100).toFixed(2)}%)] × ${markValue} × (1 + ${curse * 100}%) × (1 + ${shock * 100}%) × (1 + ${addDmg * 100}%) + 적중시 피해 ${hitDmg.toFixed(2)}\n`;
-      formulaText += `기본 기술 피해 = 위 총합 × (1 + 기본 기술 피해량 증가%) = ${baseSkillDmgCalc.toFixed(2)}\n`;
-
-      document.getElementById('skillResult').textContent = `기본 기술 피해: ${baseSkillDmgCalc.toFixed(2)}\n\n` + formulaText;
+    function parseValue(val) {
+      if (!val || val.trim() === "") return null;
+      if (val.includes('%')) return parseFloat(val) / 100;
+      return parseFloat(val);
     }
 
     function calculateEfficiency() {
-      const currentValue = parseValue(document.getElementById('currentValue').value);
-      const addedValue = parseValue(document.getElementById('addedValue').value);
-      if (currentValue === 0) {
-        document.getElementById('efficiencyResult').textContent = '현재 값이 0입니다.';
-        return;
-      }
-      const efficiency = addedValue / currentValue;
-      document.getElementById('efficiencyResult').textContent = `효율: ${(efficiency * 100).toFixed(2)}%`;
+      const current = parseValue(document.getElementById('currentValue').value);
+      const added = parseValue(document.getElementById('addedValue').value);
+      if (!current || !added) return document.getElementById('efficiencyResult').textContent = '값을 모두 입력해주세요';
+      const result = added / current;
+      document.getElementById('efficiencyResult').textContent = `효율 = ${added} ÷ ${current} = ${result.toFixed(4)} (${(result * 100).toFixed(2)}%)`;
+    }
+
+    function calculateAtk() {
+      const base = parseValue(document.getElementById('atkBaseOnly').value) ?? 0;
+      const flat = parseValue(document.getElementById('atkFlatOnly').value) ?? 0;
+      const percent = parseValue(document.getElementById('atkPercentOnly').value) ?? 0;
+      const result = (base + flat) * (1 + percent);
+      document.getElementById('atkResult').textContent = `표기 공격력 = (${base} + ${flat}) × (1 + ${percent * 100}%) = ${result.toFixed(2)}`;
+    }
+
+    function calculateBleed() {
+      const base = parseValue(document.getElementById('baseAtk').value) ?? 0;
+      const flat = parseValue(document.getElementById('flatAtk').value) ?? 0;
+      const percent = parseValue(document.getElementById('atkPercent').value) ?? 0;
+      const coef = parseValue(document.getElementById('bleedCoef').value) ?? 0.15;
+      const dmg = parseValue(document.getElementById('bleedDmg').value) ?? 0;
+      const resist = parseValue(document.getElementById('bleedResist').value) ?? 0;
+      const atk = (base + flat) * (1 + percent);
+      const result = atk * coef * (1 + dmg) * (1 + resist);
+      document.getElementById('bleedResult').textContent = `출혈 피해 = (${atk.toFixed(2)} × ${coef}) × (1 + ${dmg * 100}%) × (1 + ${resist * 100}%) = ${result.toFixed(2)}`;
+    }
+
+    function calculateStab() {
+      const bleed = parseValue(document.getElementById('bleedValue').value) ?? 0;
+      const stack = parseValue(document.getElementById('bleedStack').value) ?? 0;
+      const coef = parseValue(document.getElementById('stabCoef').value) ?? 3.5;
+      const dmg = parseValue(document.getElementById('stabDmg').value) ?? 0;
+      const result = bleed * stack * coef * (1 + dmg);
+      document.getElementById('stabResult').textContent = `자상 피해 = ${bleed} × ${stack} × ${coef} × (1 + ${dmg * 100}%) = ${result.toFixed(2)}`;
+    }
+
+    function calculateSkill() {
+      const base = parseValue(document.getElementById('baseAtk').value) ?? 0;
+      const flat = parseValue(document.getElementById('flatAtk').value) ?? 0;
+      const atkPercent = parseValue(document.getElementById('atkPercent').value) ?? 0;
+      const baseSkill = parseValue(document.getElementById('baseSkillDmg').value) ?? 0;
+      const addSkill = parseValue(document.getElementById('addSkillDmg').value) ?? 0;
+      let critRate = parseValue(document.getElementById('critRate').value) ?? 0;
+      const critDmg = parseValue(document.getElementById('critDmg').value) ?? 0;
+      const curse = parseValue(document.getElementById('curse').value) ?? 0;
+      const shock = parseValue(document.getElementById('shock').value) ?? 0;
+      const addDmg = parseValue(document.getElementById('addDmg').value) ?? 0;
+      const basicBoost = parseValue(document.getElementById('basicBoost').value) ?? 0;
+      const hitDmg = parseValue(document.getElementById('hitDmg').value) ?? 0;
+      const mark = document.getElementById('markCheck').checked;
+      const hidden = document.getElementById('hiddenBlade').checked;
+
+      critRate = hidden ? critRate : Math.min(critRate, 1);
+      const atk = (base + flat) * (1 + atkPercent);
+      const skillCoef = baseSkill + addSkill;
+      const critMul = critRate * (2 + critDmg);
+      const markMul = mark ? 1.2 : 1;
+
+      let skill = atk * skillCoef * critMul * markMul * (1 + curse) * (1 + shock) * (1 + addDmg) + (hitDmg ?? 0);
+      let basic = atk * skillCoef * critMul * (1 + basicBoost) * markMul * (1 + curse) * (1 + shock) * (1 + addDmg) + (hitDmg ?? 0);
+
+      document.getElementById('skillResult').textContent =
+        `스킬 피해 = ${skill.toFixed(2)}\n기본 기술 피해 = ${basic.toFixed(2)}`;
     }
   </script>
 </body>
