@@ -1,157 +1,318 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>스킬 계산기</title>
+  <meta charset="UTF-8" />
+  <title>스킬 계산기 (확장판)</title>
   <style>
     body {
-      background-color: #121212;
-      color: #e0e0e0;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      color: #eee;
       padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
     }
-    input[type="text"], input[type="number"] {
-      background-color: #1e1e1e;
-      color: #fff;
+    body.light {
+      background: #f4f4f4;
+      color: #222;
+    }
+    .section {
       border: 1px solid #555;
-      padding: 5px;
-      margin: 3px 0;
-      width: 150px;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 5px;
     }
     label {
-      display: block;
-      margin-top: 10px;
+      display: inline-block;
+      width: 180px;
+      margin: 5px 0;
+    }
+    input,
+    select {
+      margin: 5px 0;
+      padding: 5px;
+      width: 120px;
+      border-radius: 3px;
+      border: 1px solid #888;
+      background: #2c2c2c;
+      color: #eee;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    body.light input,
+    body.light select {
+      background: #fff;
+      color: #222;
+      border: 1px solid #ccc;
     }
     button {
+      padding: 10px 15px;
       margin-top: 15px;
-      padding: 10px;
-      background-color: #333;
-      color: white;
       border: none;
+      border-radius: 4px;
       cursor: pointer;
+      background-color: #4caf50;
+      color: white;
+      font-weight: bold;
+      transition: background-color 0.3s;
     }
-    #skillResult, #efficiencyResult, #atkResult, #bleedResult, #stabResult {
-      white-space: pre-line;
-      margin-top: 20px;
+    button:hover {
+      background-color: #45a049;
+    }
+    .result {
+      font-weight: bold;
+      color: #4caf50;
+      margin-top: 10px;
+      white-space: pre-wrap;
+    }
+    .toggle-darkmode {
+      background-color: #2196f3;
+      margin-bottom: 20px;
+    }
+    .formula {
+      background: #333;
       padding: 10px;
-      background-color: #1e1e1e;
-      border: 1px solid #444;
+      border-radius: 4px;
+      margin-top: 10px;
+      font-family: Consolas, monospace;
+      font-size: 0.9em;
+      white-space: pre-wrap;
+    }
+    body.light .formula {
+      background: #ddd;
+      color: #222;
     }
   </style>
 </head>
 <body>
-  <h2>스킬 계산기</h2>
-  <label>기초 공격력: <input type="number" id="baseAtk"></label>
-  <label>깡 공격력: <input type="number" id="flatAtk"></label>
-  <label>공격력 %: <input type="text" id="atkPercent"></label>
-  <label>기초 스킬 데미지 계수: <input type="number" id="baseSkillDmg"></label>
-  <label>추가 스킬 데미지 계수: <input type="number" id="addSkillDmg"></label>
-  <label>치명타 확률 %: <input type="text" id="critRate"></label>
-  <label>치명타 피해 %: <input type="text" id="critDmg"></label>
-  <label>저주 %: <input type="text" id="curse"></label>
-  <label>감전 %: <input type="text" id="shock"></label>
-  <label>추가 피해 %: <input type="text" id="addDmg"></label>
-  <label>기본 기술 피해량 증가 %: <input type="text" id="basicBoost"></label>
-  <label>적중시 피해 (상수 또는 %): <input type="text" id="hitDmg"></label>
-  <label><input type="checkbox" id="markCheck"> 낙인 있음 (1.2배)</label>
-  <label><input type="checkbox" id="hiddenBlade"> 숨겨진 칼날 유물 장착</label>
-  <button onclick="calculateSkill()">계산하기</button>
-  <div id="skillResult"></div>
+  <h1>스킬 계산기 (확장판)</h1>
 
-  <h2>효율 계산기</h2>
-  <label>현재 값: <input type="text" id="currentValue"></label>
-  <label>추가되는 값: <input type="text" id="addedValue"></label>
-  <button onclick="calculateEfficiency()">효율 계산</button>
-  <div id="efficiencyResult"></div>
+  <button class="toggle-darkmode" onclick="toggleDarkMode()">다크모드 토글</button>
 
-  <h2>공격력 계산기</h2>
-  <label>기초 공격력: <input type="number" id="atkBaseOnly"></label>
-  <label>깡 공격력: <input type="number" id="atkFlatOnly"></label>
-  <label>공격력 %: <input type="text" id="atkPercentOnly"></label>
-  <button onclick="calculateAtk()">표기 공격력 계산</button>
-  <div id="atkResult"></div>
+  <div class="section">
+    <h3>기본 입력</h3>
+    <label>기초 공격력:</label><input id="baseAtk" type="number" /><br />
+    <label>깡 공격력:</label><input id="flatAtk" type="number" /><br />
+    <label>공격력 %:</label><input id="atkPercent" type="text" placeholder="예: 30% 또는 0.3" /><br />
+  </div>
 
-  <h2>출혈 계산기</h2>
-  <label>기초 공격력: <input type="number" id="bleedBaseAtk"></label>
-  <label>깡 공격력: <input type="number" id="bleedFlatAtk"></label>
-  <label>공격력 %: <input type="text" id="bleedAtkPercent"></label>
-  <label>출혈 계수 (기본 0.15): <input type="text" id="bleedCoef" value="0.15"></label>
-  <label>출혈 피해 % 증가: <input type="text" id="bleedDmg"></label>
-  <label>출혈 내성 % 증가: <input type="text" id="bleedResist"></label>
-  <button onclick="calculateBleed()">출혈 피해 계산</button>
-  <div id="bleedResult"></div>
+  <div class="section">
+    <h3>스킬 피해 입력</h3>
+    <label>기초 스킬 계수:</label><input id="baseSkillCoef" type="number" step="0.01" /><br />
+    <label>추가 스킬 계수:</label><input id="addSkillCoef" type="number" step="0.01" /><br />
+    <label>치명타 확률:</label><input id="critRate" type="text" placeholder="예: 50% 또는 0.5" /><br />
+    <label>치명타 피해:</label><input id="critDmg" type="text" placeholder="예: 100% 또는 1.0" /><br />
+    <label>낙인:</label>
+    <select id="mark">
+      <option value="false">없음</option>
+      <option value="true">있음</option>
+    </select><br />
+    <label>숨겨진 칼날:</label>
+    <select id="hiddenBlade">
+      <option value="false">없음</option>
+      <option value="true">있음</option>
+    </select><br />
+    <label>기본 기술 피해량 증가:</label><input id="basicBoost" type="text" placeholder="예: 30% 또는 0.3" /><br />
+    <label>기본 기술 여부:</label>
+    <select id="isBasic">
+      <option value="false">아님</option>
+      <option value="true">기본기</option>
+    </select><br />
+    <label>저주 피해 증가:</label><input id="curse" type="text" placeholder="예: 20% 또는 0.2" /><br />
+    <label>감전 피해 증가:</label><input id="shock" type="text" placeholder="예: 15% 또는 0.15" /><br />
+    <label>추가 피해:</label><input id="addDmg" type="text" placeholder="예: 10% 또는 0.1" /><br />
+    <label>적중 시 피해:</label><input id="hitDmg" type="text" placeholder="% 또는 상수" /><br />
+  </div>
 
-  <h2>자상 계산기</h2>
-  <label>출혈 피해: <input type="text" id="bleedValue"></label>
-  <label>출혈 중첩 수: <input type="number" id="bleedStack"></label>
-  <label>자상 계수 (기본 3.5): <input type="text" id="stabCoef" value="3.5"></label>
-  <label>자상 피해 % 증가: <input type="text" id="stabDmg"></label>
-  <button onclick="calculateStab()">자상 피해 계산</button>
-  <div id="stabResult"></div>
+  <div class="section">
+    <h3>출혈 & 자상 피해</h3>
+    <label>출혈 데미지 %:</label><input id="bleedDmg" type="text" placeholder="예: 20% 또는 0.2" /><br />
+    <label>출혈 내성 %:</label><input id="bleedResist" type="text" placeholder="예: -10% 또는 -0.1" /><br />
+    <label>출혈 중첩:</label><input id="bleedStack" type="number" min="0" /><br />
+    <label>자상 피해:</label><input id="stabDmg" type="text" placeholder="% 또는 상수" /><br />
+  </div>
+
+  <div class="section">
+    <h3>효율 계산</h3>
+    <label>추가되는 값:</label><input id="effAdd" type="number" /><br />
+    <label>현재 값:</label><input id="effCur" type="number" /><br />
+  </div>
+
+  <button onclick="calculate()">모든 계산 실행</button>
+
+  <div class="result" id="result"></div>
 
   <script>
-    function parseValue(value) {
+    // 다크모드 토글 및 저장
+    function toggleDarkMode() {
+      document.body.classList.toggle("light");
+      localStorage.setItem("darkMode", document.body.classList.contains("light") ? "light" : "dark");
+    }
+    // 페이지 로드 시 다크모드 상태 복원
+    window.onload = function () {
+      if (localStorage.getItem("darkMode") === "light") {
+        document.body.classList.add("light");
+      }
+      loadInputs();
+    };
+
+    // 퍼센트면 소수로 변환, 빈값은 null
+    function parseInput(value) {
       if (!value) return null;
-      if (value.toString().includes('%')) {
-        return parseFloat(value) / 100;
+      value = value.trim();
+      if (value.endsWith("%")) {
+        return parseFloat(value.slice(0, -1)) / 100;
       }
       return parseFloat(value);
     }
 
-    function percentToStr(val) {
-      return `${(val * 100).toFixed(1)}%`;
+    // 상수 or % 여부 검사
+    function isPercent(value) {
+      return value && value.trim().endsWith("%");
     }
 
-    function calculateEfficiency() {
-      const current = parseValue(document.getElementById('currentValue').value);
-      const added = parseValue(document.getElementById('addedValue').value);
+    // 입력값 로컬스토리지 저장 함수
+    function saveInputs() {
+      const ids = [
+        "baseAtk", "flatAtk", "atkPercent", "baseSkillCoef", "addSkillCoef",
+        "critRate", "critDmg", "mark", "hiddenBlade", "basicBoost", "isBasic",
+        "curse", "shock", "addDmg", "hitDmg", "bleedDmg", "bleedResist",
+        "bleedStack", "stabDmg", "effAdd", "effCur"
+      ];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) localStorage.setItem(id, el.value);
+      });
+    }
 
-      if (!current || !added) {
-        document.getElementById('efficiencyResult').textContent = '값을 모두 입력해주세요';
-        return;
+    // 입력값 로컬스토리지 불러오기 함수
+    function loadInputs() {
+      const ids = [
+        "baseAtk", "flatAtk", "atkPercent", "baseSkillCoef", "addSkillCoef",
+        "critRate", "critDmg", "mark", "hiddenBlade", "basicBoost", "isBasic",
+        "curse", "shock", "addDmg", "hitDmg", "bleedDmg", "bleedResist",
+        "bleedStack", "stabDmg", "effAdd", "effCur"
+      ];
+      ids.forEach(id => {
+        const val = localStorage.getItem(id);
+        if (val !== null) {
+          document.getElementById(id).value = val;
+        }
+      });
+    }
+
+    // 모든 input에 change 이벤트로 저장
+    document.querySelectorAll("input, select").forEach(input => {
+      input.addEventListener("change", saveInputs);
+    });
+
+    // 계산 함수
+    function calculate() {
+      const baseAtk = parseFloat(document.getElementById("baseAtk").value) || 0;
+      const flatAtk = parseFloat(document.getElementById("flatAtk").value) || 0;
+      const atkPercent = parseInput(document.getElementById("atkPercent").value) || 0;
+
+      const baseSkillCoef = parseFloat(document.getElementById("baseSkillCoef").value) || 0;
+      const addSkillCoef = parseFloat(document.getElementById("addSkillCoef").value) || 0;
+
+      let critRate = parseInput(document.getElementById("critRate").value) || 0;
+      const critDmg = parseInput(document.getElementById("critDmg").value) || 0;
+
+      const mark = document.getElementById("mark").value === "true";
+      const hiddenBlade = document.getElementById("hiddenBlade").value === "true";
+
+      const basicBoost = parseInput(document.getElementById("basicBoost").value) || 0;
+      const isBasic = document.getElementById("isBasic").value === "true";
+
+      const curse = parseInput(document.getElementById("curse").value) || 0;
+      const shock = parseInput(document.getElementById("shock").value) || 0;
+      const addDmg = parseInput(document.getElementById("addDmg").value) || 0;
+
+      const hitDmgRaw = document.getElementById("hitDmg").value.trim();
+      let hitDmg = 0;
+      if (hitDmgRaw) {
+        if (hitDmgRaw.endsWith("%")) {
+          hitDmg = parseFloat(hitDmgRaw.slice(0, -1)) / 100;
+          hitDmg = 1 + hitDmg;
+        } else {
+          hitDmg = parseFloat(hitDmgRaw);
+        }
+      } else {
+        hitDmg = 0;
       }
-      const result = added / current;
-      document.getElementById('efficiencyResult').textContent = `효율 = ${added} ÷ ${current} = ${result.toFixed(4)} (${(result * 100).toFixed(2)}%)`;
-    }
 
-    function calculateAtk() {
-      const base = parseValue(document.getElementById('atkBaseOnly').value) ?? 0;
-      const flat = parseValue(document.getElementById('atkFlatOnly').value) ?? 0;
-      const percent = parseValue(document.getElementById('atkPercentOnly').value) ?? 0;
+      // 치명타 확률 100% 초과 처리
+      if (!hiddenBlade && critRate > 1) critRate = 1;
 
-      const result = (base + flat) * (1 + percent);
-      document.getElementById('atkResult').textContent = `표기 공격력 = (${base} + ${flat}) × (1 + ${percentToStr(percent)}) = ${result.toFixed(2)}`;
-    }
+      // 표기 공격력 계산
+      const displayedAtk = (baseAtk + flatAtk) * (1 + atkPercent);
 
-    function calculateBleed() {
-      const base = parseValue(document.getElementById('bleedBaseAtk').value) ?? 0;
-      const flat = parseValue(document.getElementById('bleedFlatAtk').value) ?? 0;
-      const percent = parseValue(document.getElementById('bleedAtkPercent').value) ?? 0;
-      const coef = parseValue(document.getElementById('bleedCoef').value) ?? 0.15;
-      const dmg = parseValue(document.getElementById('bleedDmg').value) ?? 0;
-      const resist = parseValue(document.getElementById('bleedResist').value) ?? 0;
+      // 치명타 피해 배율 (2 + 치피%)
+      const critMultiplier = 2 + critDmg;
 
-      const atk = (base + flat) * (1 + percent);
-      const result = atk * coef * (1 + dmg) * (1 + resist);
+      // 기본 스킬 피해 계수
+      const skillCoef = baseSkillCoef + addSkillCoef;
 
-      document.getElementById('bleedResult').textContent =
-        `출혈 피해 = {(${base} + ${flat}) × (1 + ${percentToStr(percent)})} × ${coef}\n× (1 + ${percentToStr(dmg)}) × (1 + ${percentToStr(resist)})\n= ${result.toFixed(2)}`;
-    }
+      // 낙인 1.2 or 1
+      const markCoef = mark ? 1.2 : 1;
 
-    function calculateStab() {
-      const bleed = parseValue(document.getElementById('bleedValue').value) ?? 0;
-      const stack = parseValue(document.getElementById('bleedStack').value) ?? 0;
-      const coef = parseValue(document.getElementById('stabCoef').value) ?? 3.5;
-      const dmg = parseValue(document.getElementById('stabDmg').value) ?? 0;
+      // 기본 기술 피해량 증가 적용 여부
+      const basicCoef = isBasic ? (1 + basicBoost) : 1;
 
-      const result = bleed * stack * coef * (1 + dmg);
-      document.getElementById('stabResult').textContent =
-        `자상 피해 = ${bleed} × ${stack} × ${coef} × (1 + ${percentToStr(dmg)}) = ${result.toFixed(2)}`;
-    }
+      // 스킬 피해 계산
+      let skillDamage =
+        displayedAtk * skillCoef * (1 + critRate) * critMultiplier * basicCoef * markCoef *
+        (1 + curse) * (1 + shock) * (1 + addDmg) + hitDmg;
 
-    function calculateSkill() {
-      const result = `스킬 피해 = \n\n기본 스킬 피해 계산식:\n[{(기초공격력 + 깡공) × (1 + 공격력%)} × (기초스킬데미지 + 추가스킬데미지) × (1 + 치확%) × (2 + 치피%)]\n\n여기에 낙인, 기본 기술 증폭, 저주, 감전, 추가 피해, 적중시 피해를 조건에 따라 곱하거나 더합니다.\n\n※ 본 계산기는 추후 업데이트 예정입니다.`;
-      document.getElementById('skillResult').textContent = result;
+      // 출혈 피해 계산
+      const bleedDmgPercent = parseInput(document.getElementById("bleedDmg").value) || 0;
+      const bleedResistPercent = parseInput(document.getElementById("bleedResist").value) || 0;
+      const bleedStack = parseInt(document.getElementById("bleedStack").value) || 0;
+      const stabDmgRaw = document.getElementById("stabDmg").value.trim();
+
+      const bleedBase = displayedAtk * 0.15 * (1 + bleedDmgPercent) * (1 + bleedResistPercent);
+      const bleedTotal = bleedBase * bleedStack;
+
+      // 자상 피해 처리
+      let stabDmg = 0;
+      if (stabDmgRaw) {
+        if (stabDmgRaw.endsWith("%")) {
+          stabDmg = bleedTotal * bleedStack * 3.5 * (1 + parseFloat(stabDmgRaw.slice(0, -1)) / 100);
+        } else {
+          stabDmg = bleedTotal * bleedStack * 3.5 * parseFloat(stabDmgRaw);
+        }
+      }
+
+      // 효율 계산
+      const effAdd = parseFloat(document.getElementById("effAdd").value);
+      const effCur = parseFloat(document.getElementById("effCur").value);
+      let efficiency = null;
+      if (!isNaN(effAdd) && !isNaN(effCur) && effCur !== 0) {
+        efficiency = effAdd / effCur;
+      }
+
+      // 출력용 문자열 조합
+      let resultText = "";
+
+      resultText += `1. 표기 공격력: ${displayedAtk.toFixed(2)}\n`;
+
+      resultText +=
+        `2. 스킬 피해${isBasic ? " (기본 기술)" : ""}: ${skillDamage.toFixed(2)}\n` +
+        `   계산식: \n` +
+        `   (${baseAtk} + ${flatAtk}) × (1 + ${atkPercent.toFixed(3)}) × (${baseSkillCoef.toFixed(3)} + ${addSkillCoef.toFixed(3)}) × (1 + ${critRate.toFixed(3)}) × (2 + ${critDmg.toFixed(3)}) × ${basicCoef.toFixed(3)} × ${markCoef.toFixed(1)} × (1 + ${curse.toFixed(3)}) × (1 + ${shock.toFixed(3)}) × (1 + ${addDmg.toFixed(3)}) + ${hitDmg.toFixed(2)}\n`;
+
+      resultText += `3. 출혈 피해: ${bleedTotal.toFixed(2)}\n` +
+        `   계산식: (${baseAtk} + ${flatAtk}) × 0.15 × (1 + ${bleedDmgPercent.toFixed(3)}) × (1 + ${bleedResistPercent.toFixed(3)}) × ${bleedStack}\n`;
+
+      resultText += `4. 자상 피해: ${stabDmg.toFixed(2)}\n` +
+        `   계산식: 출혈 피해 × 중첩 × 3.5 × 자상 피해 배수\n`;
+
+      if (efficiency !== null) {
+        resultText += `5. 효율: ${efficiency.toFixed(3)}\n` +
+          `   계산식: 추가되는 값 ÷ 현재 값 = ${effAdd} ÷ ${effCur}\n`;
+      } else {
+        resultText += `5. 효율: 계산 불가 (추가되는 값과 현재 값을 입력하세요)\n`;
+      }
+
+      document.getElementById("result").textContent = resultText;
     }
   </script>
 </body>
