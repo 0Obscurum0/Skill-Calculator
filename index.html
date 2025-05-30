@@ -2,98 +2,139 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>스킬 계산기</title>
   <style>
     body {
-      font-family: sans-serif;
-      background-color: #121212;
-      color: #ffffff;
+      font-family: Arial;
       padding: 20px;
-    }
-    input, button {
-      padding: 10px;
-      margin: 5px 0;
-      width: 100%;
-      box-sizing: border-box;
-      background: #1e1e1e;
+      background-color: #121212;
       color: white;
-      border: 1px solid #555;
-      border-radius: 5px;
     }
-    button {
-      background-color: #03dac5;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
+    input {
+      margin: 3px;
     }
     .result {
       margin-top: 20px;
-      font-size: 1.2em;
-      color: #03dac5;
+      padding: 10px;
+      background: #1e1e1e;
+      border-radius: 10px;
+    }
+    label {
+      display: inline-block;
+      width: 200px;
     }
   </style>
 </head>
 <body>
+  <h2>스킬 계산기</h2>
 
-  <h1>스킬 계산기</h1>
+  <div>
+    <label>기초 공격력:</label><input id="baseAtk" type="number"><br>
+    <label>깡 공격력:</label><input id="flatAtk" type="number"><br>
+    <label>공격력 %:</label><input id="atkPercent" type="number"><br>
+    <label>기초 스킬 데미지 계수:</label><input id="baseSkillDmg" type="number"><br>
+    <label>추가 스킬 데미지 계수:</label><input id="extraSkillDmg" type="number"><br>
+    <label>치명타 확률 %:</label><input id="critChance" type="number"><br>
+    <label>치명타 피해 %:</label><input id="critDmg" type="number"><br>
+    <label>낙인 배율 (없으면 1):</label><input id="brand" type="number" placeholder="기본: 1.2"><br>
+    <label>저주 %:</label><input id="curse" type="number"><br>
+    <label>감전 %:</label><input id="shock" type="number"><br>
+    <label>추가 피해 %:</label><input id="extra" type="number"><br>
+    <label>적중 시 피해:</label><input id="onHit" type="text" placeholder="예: 500 또는 20%"><br>
+    <label>기본 기술 피해량 증가 %:</label><input id="baseSkillBoost" type="number"><br>
+    <label>출혈 데미지 %:</label><input id="bleedDmg" type="number"><br>
+    <label>출혈 중첩 수:</label><input id="bleedStacks" type="number"><br>
+    <label>출혈 내성 %:</label><input id="bleedResist" type="number"><br>
+    <label>자상 데미지:</label><input id="stabDmg" type="text" placeholder="예: 100 또는 15%"><br>
+    <label>[숨겨진 칼날] 유물 있음?</label><input id="hasRelic" type="checkbox"><br><br>
 
-  <label>기초공격력 <input type="number" id="baseAtk"></label>
-  <label>깡공 <input type="number" id="flatAtk"></label>
-  <label>공격력% <input type="number" id="atkPercent"></label>
-  <label>기초스킬데미지% <input type="number" id="baseSkillDmg"></label>
-  <label>추가스킬데미지% <input type="number" id="extraSkillDmg"></label>
-  <label>치확% <input type="number" id="critRate"></label>
-  <label>치명타피해% <input type="number" id="critDmg"></label>
-  <label>낙인 계수 (ex: 1.2 또는 없음 시 비워두세요) <input type="number" step="0.01" id="brand"></label>
-  <label>저주% <input type="number" id="curse"></label>
-  <label>감전% <input type="number" id="shock"></label>
-  <label>추가피해% <input type="number" id="bonusDmg"></label>
-  <label>적중시 피해 <input type="number" id="onHit"></label>
-  <label>기본 기술 피해량 증가% <input type="number" id="basicSkillBoost"></label>
+    <button onclick="calculate()">계산하기</button>
+  </div>
 
-  <button onclick="calculate()">계산</button>
-
-  <div class="result" id="skillResult">스킬피해: -</div>
-  <div class="result" id="basicSkillResult">기본 기술 피해: -</div>
+  <div class="result" id="result"></div>
 
   <script>
-    function parseValue(id) {
-      const value = parseFloat(document.getElementById(id).value);
-      return isNaN(value) ? null : value;
+    function parsePercentOrFlat(input) {
+      if (!input) return 0;
+      if (input.includes('%')) {
+        return parseFloat(input) / 100;
+      }
+      return parseFloat(input);
     }
 
     function calculate() {
-      const baseAtk = parseValue("baseAtk") ?? 0;
-      const flatAtk = parseValue("flatAtk") ?? 0;
-      const atkPercent = parseValue("atkPercent") ?? 0;
-      const baseSkillDmg = parseValue("baseSkillDmg") ?? 0;
-      const extraSkillDmg = parseValue("extraSkillDmg") ?? 0;
-      const critRate = parseValue("critRate") ?? 0;
-      const critDmg = parseValue("critDmg") ?? 0;
-      const brand = parseValue("brand");
-      const curse = parseValue("curse") ?? 0;
-      const shock = parseValue("shock") ?? 0;
-      const bonusDmg = parseValue("bonusDmg") ?? 0;
-      const onHit = parseValue("onHit") ?? 0;
-      const basicSkillBoost = parseValue("basicSkillBoost") ?? 0;
+      const baseAtk = +document.getElementById('baseAtk').value || 0;
+      const flatAtk = +document.getElementById('flatAtk').value || 0;
+      const atkPercent = +document.getElementById('atkPercent').value || 0;
+      const baseSkillDmg = +document.getElementById('baseSkillDmg').value || 0;
+      const extraSkillDmg = +document.getElementById('extraSkillDmg').value || 0;
+      let critChance = +document.getElementById('critChance').value || 0;
+      const critDmg = +document.getElementById('critDmg').value || 0;
+      const brand = +document.getElementById('brand').value || 1.2;
+      const curse = +document.getElementById('curse').value || 0;
+      const shock = +document.getElementById('shock').value || 0;
+      const extra = +document.getElementById('extra').value || 0;
+      const onHitInput = document.getElementById('onHit').value;
+      const baseSkillBoost = +document.getElementById('baseSkillBoost').value || 0;
+      const bleedDmg = +document.getElementById('bleedDmg').value || 0;
+      const bleedStacks = +document.getElementById('bleedStacks').value || 0;
+      const bleedResist = +document.getElementById('bleedResist').value || 0;
+      const stabDmgInput = document.getElementById('stabDmg').value;
+      const hasRelic = document.getElementById('hasRelic').checked;
 
-      const totalAtk = (baseAtk + flatAtk) * (1 + atkPercent / 100);
-      const skillRatio = (baseSkillDmg + extraSkillDmg) / 100;
-      const critMultiplier = (1 + critRate / 100) * (2 + critDmg / 100);
-      const brandMultiplier = brand ?? 1;
-      const curseMultiplier = 1 + curse / 100;
-      const shockMultiplier = 1 + shock / 100;
-      const bonusMultiplier = 1 + bonusDmg / 100;
-      const basicSkillMultiplier = 1 + basicSkillBoost / 100;
+      const atk = (baseAtk + flatAtk) * (1 + atkPercent / 100);
+      const skillFactor = (baseSkillDmg + extraSkillDmg);
 
-      const skillDamage = totalAtk * skillRatio * critMultiplier * brandMultiplier * curseMultiplier * shockMultiplier * bonusMultiplier + onHit;
-      const basicSkillDamage = totalAtk * skillRatio * critMultiplier * basicSkillMultiplier * brandMultiplier * curseMultiplier * shockMultiplier * bonusMultiplier + onHit;
+      if (critChance > 100) {
+        critChance = 100 + (hasRelic ? (critChance - 100) : 0);
+      }
+      const critMultiplier = (1 + critChance / 100) * (2 + critDmg / 100);
 
-      document.getElementById("skillResult").textContent = "스킬피해: " + Math.round(skillDamage);
-      document.getElementById("basicSkillResult").textContent = "기본 기술 피해: " + Math.round(basicSkillDamage);
+      const curseFactor = 1 + curse / 100;
+      const shockFactor = 1 + shock / 100;
+      const extraFactor = 1 + extra / 100;
+      const baseSkillBoostFactor = 1 + baseSkillBoost / 100;
+
+      let onHit = 0;
+      if (onHitInput.includes('%')) {
+        onHit = atk * parseFloat(onHitInput) / 100;
+      } else {
+        onHit = parseFloat(onHitInput) || 0;
+      }
+
+      const displayAtk = atk;
+
+      const skillDmg = atk * skillFactor * critMultiplier * brand * curseFactor * shockFactor * extraFactor + onHit;
+      const basicSkill = atk * skillFactor * critMultiplier * baseSkillBoostFactor * brand * curseFactor * shockFactor * extraFactor + onHit;
+
+      const bleed = atk * 0.15 * (1 + bleedDmg / 100) * (1 + bleedResist / 100);
+      let stabDmg = 0;
+      if (stabDmgInput.includes('%')) {
+        stabDmg = bleed * bleedStacks * 3.5 * (1 + parseFloat(stabDmgInput) / 100);
+      } else {
+        stabDmg = bleed * bleedStacks * 3.5 + parseFloat(stabDmgInput || 0);
+      }
+
+      document.getElementById('result').innerHTML = `
+        <b>표기 공격력:</b> ${displayAtk.toFixed(2)}<br>
+        <b>스킬 피해:</b> ${skillDmg.toFixed(2)}<br>
+        <b>기본 기술 피해:</b> ${basicSkill.toFixed(2)}<br>
+        <b>출혈 피해:</b> ${bleed.toFixed(2)}<br>
+        <b>자상 피해:</b> ${stabDmg.toFixed(2)}<br><br>
+        <b>효율 계산기:</b><br>
+        <label>현재값:</label><input id="currentVal" type="number"><br>
+        <label>추가되는값:</label><input id="addedVal" type="number"><br>
+        <button onclick="eff()">계산</button>
+        <div id="effResult"></div>
+      `;
+    }
+
+    function eff() {
+      const cur = +document.getElementById('currentVal').value || 0;
+      const added = +document.getElementById('addedVal').value || 0;
+      const result = added / (cur || 1);
+      document.getElementById('effResult').innerHTML = `효율: ${result.toFixed(2)}`;
     }
   </script>
-
 </body>
 </html>
